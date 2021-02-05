@@ -46,28 +46,20 @@ int main() {
 
     char * cmd = "AT\r\n\0";
 
-    while(!can_transmit());
-    *(wifi_uart+1) = cmd[0];
-    while(!can_transmit());
-    *(wifi_uart+1) = cmd[1];
-    while(!can_transmit());
-    *(wifi_uart+1) = cmd[2];
-    while(!can_transmit());
-    *(wifi_uart+1) = cmd[3];
-    while(!can_transmit());
-    *(wifi_uart+1) = cmd[4];
+    for (int i =0; i<5 ;i++) {
+    	while(!can_transmit());
+    	*(wifi_uart+1) = cmd[i];
+    	printf("Sending ' %c ' \n", cmd[i]);
+
+    }
+
 
     check_status();
 
-    while(!can_receive());
-    printf("1 %c\n",*(wifi_uart));
-    while(!can_receive());
-    printf("2 %c\n",*(wifi_uart));
-    while(!can_receive());
-    printf("3 %c\n",*(wifi_uart));
-    while(!can_receive());
-    printf("4 %c\n",*(wifi_uart));
-
-    printf("DONE\n");
+    while(1) {
+    	if (can_receive()) {
+    		printf("%c", *(wifi_uart));
+    	}
+    }
 
 }
