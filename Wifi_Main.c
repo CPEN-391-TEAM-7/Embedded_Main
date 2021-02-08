@@ -1,7 +1,9 @@
 #include <stdio.h>
 
-#define wifi_uart (volatile int *) 0xFF200060
+#define wifi_uart  (volatile int *) 0xFF200060
+#define wifi_reset (volatile int *) 0xFF200080
 
+// check all status register bits in UART core
 void check_status() {
 
 	int status = *(wifi_uart+2);
@@ -26,8 +28,33 @@ int can_receive() {
 	return *(wifi_uart+2) & 1 << 7;
 }
 
+
+void reset_wifi(){
+
+	// reset value should start at 0
+	// set it manually to 0 just to be sure
+	*(wifi_reset) = 0;
+    check_status();
+    *(wifi_reset) = 1;
+
+    while(can_receive()) {
+    	printf("%c", *(wifi_uart));
+    }
+
+
+    // reset status register
+	*(wifi_uart+2) = 0;
+}
+
 int can_transmit() {
 	return *(wifi_uart+2) & 1 << 6;
+}
+
+void send_command(char * cmd) {
+    for (char * i = cmd; *i != '\0'; i++) {
+    	while(!can_transmit());
+    	*(wifi_uart+1) = *i;
+    }
 }
 
 /*
@@ -41,25 +68,37 @@ int can_transmit() {
 
 int main() {
 
-	*(wifi_uart+2) = 0;
+	reset_wifi();
+
+    char * cmd = "AT+CIFSR\r\n";
+    char buffer[1000];
+
 	check_status();
 
-    char * cmd = "AT\r\n\0";
+	send_command(cmd);
 
-    for (int i =0; i<5 ;i++) {
-    	while(!can_transmit());
-    	*(wifi_uart+1) = cmd[i];
-    	printf("Sending ' %c ' \n", cmd[i]);
-
-    }
-
-
-    check_status();
-
+    int counter = 0;
+    int buffer_ptr = 0;
     while(1) {
+
     	if (can_receive()) {
-    		printf("%c", *(wifi_uart));
+    		buffer[buffer_ptr] = *(wifi_uart);
+    		counter = 0;
+    		buffer_ptr++;
+    	}
+    	counter++;
+    	if (counter == 100000) {
+
+    		if (buffer_ptr > 0) {
+
+    			//printf("buffer size %d \n", buffer_ptr);
+    			for (int i =0; i< buffer_ptr; i++) {
+    				printf("%c",buffer[i]);
+    			}
+
+    			buffer_ptr = 0;
+    		}
+    		counter = 0;
     	}
     }
-
 }
