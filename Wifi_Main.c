@@ -1,12 +1,20 @@
 #include <stdio.h>
 
+#define leds       (volatile int *) 0xFF200020
 #define wifi_uart  (volatile int *) 0xFF200060
 #define wifi_reset (volatile int *) 0xFF200080
+#define bt_uart    (volatile int *) 0xFF200100
+
+#define WIFI       1
+#define BLUETOOTH  0
 
 // check all status register bits in UART core
-void check_status() {
+void check_status(int module) {
 
-	int status = *(wifi_uart+2);
+	int status;
+
+	if (module == WIFI) status = *(wifi_uart+2);
+	else                status = *(bt_uart+2);
 
 	printf("status = %x\n",status);
 	printf("parityerror %x\n",(status & (1 << 0)));
@@ -24,8 +32,9 @@ void check_status() {
 	printf("\n\n");
 }
 
-int can_receive() {
-	return *(wifi_uart+2) & 1 << 7;
+int can_receive(int module) {
+	if (module == WIFI) return *(wifi_uart+2) & 1 << 7;
+	else                return *(  bt_uart+2) & 1 << 7;
 }
 
 
@@ -34,10 +43,10 @@ void reset_wifi(){
 	// reset value should start at 0
 	// set it manually to 0 just to be sure
 	*(wifi_reset) = 0;
-    check_status();
+    check_status(WIFI);
     *(wifi_reset) = 1;
 
-    while(can_receive()) {
+    while(can_receive(WIFI)) {
     	printf("%c", *(wifi_uart));
     }
 
@@ -46,13 +55,14 @@ void reset_wifi(){
 	*(wifi_uart+2) = 0;
 }
 
-int can_transmit() {
-	return *(wifi_uart+2) & 1 << 6;
+int can_transmit(int module) {
+	if (module == WIFI) return *(wifi_uart+2) & 1 << 6;
+	else                return *(  bt_uart+2) & 1 << 6;
 }
 
-void send_command(char * cmd) {
+void send_command(int module, char * cmd) {
     for (char * i = cmd; *i != '\0'; i++) {
-    	while(!can_transmit());
+    	while(!can_transmit(WIFI));
     	*(wifi_uart+1) = *i;
     }
 }
@@ -70,34 +80,65 @@ int main() {
 
 	reset_wifi();
 
-    char * cmd = "AT+CIFSR\r\n";
-    char buffer[1000];
+	// WiFi testing command
+    //char * cmd = "AT+CIFSR\r\n";
 
-	check_status();
+	// Bluetooth testing command
+	char * cmd = "AT\r\n";
 
-	send_command(cmd);
+    char wifi_buffer[1000];
+    char   bt_buffer[1000];
+
+	check_status(WIFI);
+	check_status(BLUETOOTH);
+
+	send_command(BLUETOOTH, cmd);
 
     int counter = 0;
-    int buffer_ptr = 0;
+
+    int wifi_ptr = 0;
+    int bt_ptr   = 0;
+
+    int action_counter = 0;
+
+
     while(1) {
 
-    	if (can_receive()) {
-    		buffer[buffer_ptr] = *(wifi_uart);
+    	if (can_receive(WIFI)) {
+    		wifi_buffer[wifi_ptr] = *(wifi_uart);
     		counter = 0;
-    		buffer_ptr++;
+    		wifi_ptr++;
     	}
+
+    	if (can_receive(BLUETOOTH)) {
+    		bt_buffer[bt_ptr] = *(bt_uart);
+    		counter = 0;
+    		bt_ptr++;
+    	}
+
     	counter++;
     	if (counter == 100000) {
 
-    		if (buffer_ptr > 0) {
+    		// Get cool LED visuals
+    		action_counter++;
+    		*(leds) = action_counter;
 
-    			//printf("buffer size %d \n", buffer_ptr);
-    			for (int i =0; i< buffer_ptr; i++) {
-    				printf("%c",buffer[i]);
+    		// read all buffered wifi responses
+    		if (wifi_ptr > 0) {
+    			for (int i =0; i< wifi_ptr; i++) {
+    				printf("%c",wifi_buffer[i]);
     			}
-
-    			buffer_ptr = 0;
+    			wifi_ptr = 0;
     		}
+
+    		// read all buffered bluetooth responses
+    		if (bt_ptr > 0) {
+    			for (int i =0; i< bt_ptr; i++) {
+    				printf("%c",bt_buffer[i]);
+    			}
+    			bt_ptr = 0;
+    		}
+
     		counter = 0;
     	}
     }
