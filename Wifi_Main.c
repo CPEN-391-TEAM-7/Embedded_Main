@@ -89,6 +89,36 @@ void send_command(int module, char * cmd) {
         "DIVISOR: *(wifi_uart+4));
 */
 
+int receive_single_data( int module ,char * buffer) {
+
+	int ptr = 0;
+	int counter = 0;
+
+	while (counter < 1000000) {
+		if (can_receive(module)) {
+	    	if (module == WIFI) buffer[ptr] = *(wifi_uart);
+	    	else                buffer[ptr] = *(bt_uart);
+	    	counter = 0;
+	    	ptr++;
+		}
+		counter++;
+	}
+
+	if (ptr > 0) {
+		for (int i =0; i< ptr; i++) {
+			printf("%c",buffer[i]);
+	    }
+	}
+
+	return ptr;
+}
+
+/*
+void receive_double data(char * wifi_buffer, char * bt_buffer) {
+
+
+}
+*/
 int main() {
 
 	printf("initializing WiFi\n");
@@ -103,7 +133,7 @@ int main() {
      char * cmd1 = "AT+CWLAP\r\n";
 
 	// Bluetooth testing command
-	 char * cmd2 = "AT+STATE?\r\n";
+	 char * cmd2 = "AT+MRAD?\r\n";
 
     char wifi_buffer[1000];
     char   bt_buffer[1000];
@@ -116,7 +146,39 @@ int main() {
     int action_counter = 0;
 
     //send_command(WIFI,cmd1 );
-    send_command(BLUETOOTH, cmd2);
+
+    send_command(BLUETOOTH, "AT\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+    send_command(BLUETOOTH, "AT+UART=38400,0,0\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+    send_command(BLUETOOTH, "AT+VERSION?\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+    send_command(BLUETOOTH, "AT+ROLE?\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+    send_command(BLUETOOTH, "AT+CMODE?\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+    send_command(BLUETOOTH, "AT+ADDR?\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+	send_command(BLUETOOTH, "AT+MRAD?\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+	send_command(BLUETOOTH, "AT+STATE?\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+    send_command(BLUETOOTH, "AT+INIT\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+	send_command(BLUETOOTH, "AT+STATE?\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
+
+	send_command(BLUETOOTH, "AT+INQ\r\n");
+    receive_single_data(BLUETOOTH, bt_buffer);
 
     while(1) {
 
