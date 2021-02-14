@@ -94,7 +94,7 @@ int receive_single_data( int module ,char * buffer) {
 	int ptr = 0;
 	int counter = 0;
 
-	while (counter < 1000000) {
+	while (counter < 10000000) {
 		if (can_receive(module)) {
 	    	if (module == WIFI) buffer[ptr] = *(wifi_uart);
 	    	else                buffer[ptr] = *(bt_uart);
@@ -156,12 +156,6 @@ int main() {
     send_command(BLUETOOTH, "AT+VERSION?\r\n");
     receive_single_data(BLUETOOTH, bt_buffer);
 
-    send_command(BLUETOOTH, "AT+ROLE?\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
-
-    send_command(BLUETOOTH, "AT+CMODE?\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
-
     send_command(BLUETOOTH, "AT+ADDR?\r\n");
     receive_single_data(BLUETOOTH, bt_buffer);
 
@@ -174,11 +168,17 @@ int main() {
     send_command(BLUETOOTH, "AT+INIT\r\n");
     receive_single_data(BLUETOOTH, bt_buffer);
 
-	send_command(BLUETOOTH, "AT+STATE?\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
+	// ENTER WIFI PASSWORD HERE
+	send_command(WIFI, "AT+CWJAP_CUR=\"<WIFI SSID>\",\"<WIFI PASSWORD>\"\r\n");
+	receive_single_data(WIFI, wifi_buffer);
 
-	send_command(BLUETOOTH, "AT+INQ\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
+	sleep(10000);
+
+	send_command(WIFI, "AT+CIFSR\r\n");
+	receive_single_data(WIFI, wifi_buffer);
+
+	send_command(WIFI, "AT+CIPSTART=\"UDP\",\"0.0.0.0\",41234,41234,2\r\n");
+	receive_single_data(WIFI, wifi_buffer);
 
     while(1) {
 
