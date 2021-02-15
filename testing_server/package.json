@@ -1,0 +1,14 @@
+{
+  "name": "udp_server",
+  "version": "1.0.0",
+  "description": "udp testing server for hardware",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ali",
+  "license": "ISC",
+  "dependencies": {
+    "dgram": "^1.0.1"
+  }
+}
