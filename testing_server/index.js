@@ -11,11 +11,21 @@ domains = [
     "s.w.org"
 ]
 
+
+client.bind(56789);
+
 var size = domains.length
 
-setInterval(() => {
-    var random = domains[Math.floor(Math.random()*size)];
-    const message = Buffer.from(random);
-    client.send(message, 41234, '192.168.1.83');
-    console.log("sending...");
-}, 10000);
+
+var random = domains[Math.floor(Math.random()*size)];
+const message = Buffer.from(random);
+client.send(message, 41234, '192.168.1.74');
+console.log("sending...");
+
+
+client.on("message",(msg, remote) => {
+
+    console.log("recieved: " + msg);
+
+} );
+
