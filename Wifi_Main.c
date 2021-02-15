@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define leds       (volatile int *) 0xFF200020
 #define wifi_uart  (volatile int *) 0xFF200060
@@ -94,7 +96,7 @@ int receive_single_data( int module ,char * buffer) {
 	int ptr = 0;
 	int counter = 0;
 
-	while (counter < 10000000) {
+	while (counter < 1000000) {
 		if (can_receive(module)) {
 	    	if (module == WIFI) buffer[ptr] = *(wifi_uart);
 	    	else                buffer[ptr] = *(bt_uart);
@@ -113,12 +115,71 @@ int receive_single_data( int module ,char * buffer) {
 	return ptr;
 }
 
-/*
-void receive_double data(char * wifi_buffer, char * bt_buffer) {
+int get_result(long len) { // temporarily all domains with odd number of characters are malware
+    return (len % 2);
+}
 
+long parse_ipd( char * msg, char * domain) {
+
+    msg = msg + 5;                      // Remove string prefix '+IPD' which is 7 characters
+    char * rest;
+    long ret = strtoul(msg, &rest, 10); // Read size of domain name into long, 10 refers to base 10
+    rest = rest + 1;                    // remove colon before domain name
+    printf("ipd: %s\n",rest); 
+    
+    strcpy(domain,rest);				// copy extracted domain to allocated char array
+
+    return ret;
+}
+
+void send_result(int result, long len, char * domain) {
+    
+	char wifi_buffer[1000];
+
+    char cmd[100];								// allocate space for AT command
+    sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.78\",56789\r\n",len+1);		// create AT command
+    char data[100];								// allocate space for data to be sent
+    sprintf(data,"%s%d",domain,result);			// create sending data
+	send_command(WIFI, cmd);
+	receive_single_data(WIFI,wifi_buffer);
+	send_command(WIFI, data);
+	receive_single_data(WIFI,wifi_buffer);
 
 }
-*/
+
+void handle_wifi_buffer(char * buffer, int buffer_size) {
+
+	char buff_copy[1000];                     // make same size as receiving buffer, just in case
+	strncpy(buff_copy, buffer, buffer_size);  // copy only the valid characters
+	buff_copy[buffer_size] = 0;               // add null terminator
+
+	char * raw = strtok(buff_copy, "\r\n");	  // split buffer wherever there is a new line
+
+    while (raw != NULL)
+    {
+		if (strstr(raw,"IPD")) {				 // make sure this is a data string
+
+			printf("Got IPD\n");
+            char domain[100];                    // allocate space for extracted domain
+
+            long len = parse_ipd(raw, domain);   // get domain and data length
+			printf("Extracted domain of size %lu \n", len);
+
+            int result = get_result(len);
+			printf("got result %d\n",result);
+
+            send_result(result,len,domain);
+			printf("sent result!\n");
+
+			raw = strtok(NULL, "\r\n");
+        } else {
+			printf(raw);
+			raw = strtok(NULL, "\r\n");
+		}
+    }
+
+}
+
 int main() {
 
 	printf("initializing WiFi\n");
@@ -129,12 +190,6 @@ int main() {
 	reset_bluetooth();
 	sleep(1000);
 
-	// WiFi testing command
-     char * cmd1 = "AT+CWLAP\r\n";
-
-	// Bluetooth testing command
-	 char * cmd2 = "AT+MRAD?\r\n";
-
     char wifi_buffer[1000];
     char   bt_buffer[1000];
 
@@ -144,8 +199,6 @@ int main() {
     int bt_ptr   = 0;
 
     int action_counter = 0;
-
-    //send_command(WIFI,cmd1 );
 
     send_command(BLUETOOTH, "AT\r\n");
     receive_single_data(BLUETOOTH, bt_buffer);
@@ -169,7 +222,7 @@ int main() {
     receive_single_data(BLUETOOTH, bt_buffer);
 
 	// ENTER WIFI PASSWORD HERE
-	send_command(WIFI, "AT+CWJAP_CUR=\"<WIFI SSID>\",\"<WIFI PASSWORD>\"\r\n");
+	send_command(WIFI, "AT+CWJAP_CUR=\"<WIFI NAME HERE>\",\"<WIFI PASSWORD HERE>\"\r\n");
 	receive_single_data(WIFI, wifi_buffer);
 
 	sleep(10000);
@@ -177,8 +230,14 @@ int main() {
 	send_command(WIFI, "AT+CIFSR\r\n");
 	receive_single_data(WIFI, wifi_buffer);
 
-	send_command(WIFI, "AT+CIPSTART=\"UDP\",\"0.0.0.0\",41234,41234,2\r\n");
+	//send_command(WIFI, "AT+CIPMUX=1\r\n");
+	//receive_single_data(WIFI, wifi_buffer);
+
+	send_command(WIFI, "AT+CIPSTART=\"UDP\",\"0.0.0.0\",41234,41234,0\r\n");
 	receive_single_data(WIFI, wifi_buffer);
+
+	// Test Server address
+	//send_command(WIFI, "AT+CIPSTART=1,\"UDP\",\"192.168.1.78\",56789,56789,2\r\n");
 
     while(1) {
 
@@ -201,17 +260,15 @@ int main() {
     		action_counter++;
     		*(leds) = action_counter;
 
-    		// read all buffered wifi responses
+    		// handle all buffered wifi responses
     		if (wifi_ptr > 0) {
-    			for (int i =0; i< wifi_ptr; i++) {
-    				printf("%c",wifi_buffer[i]);
-    			}
+				handle_wifi_buffer(wifi_buffer,wifi_ptr);
     			wifi_ptr = 0;
     		}
 
     		// read all buffered bluetooth responses
     		if (bt_ptr > 0) {
-    			printf("Bluetooth message: ");
+    			printf("\nBluetooth message: ");
     			for (int i =0; i< bt_ptr; i++) {
     				printf("%c",bt_buffer[i]);
     			}
