@@ -1,15 +1,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "wifi_password.h"
 
 #define leds       (volatile int *) 0xFF200020
 #define wifi_uart  (volatile int *) 0xFF200060
 #define wifi_reset (volatile int *) 0xFF200080
 #define bt_uart    (volatile int *) 0xFF200100
 #define timer      (volatile int *) 0xFFFEC600
+#define hex0       (volatile int *) 0xFF200030
+#define hex1       (volatile int *) 0xFF200040
 
 #define WIFI       1
 #define BLUETOOTH  0
+
+//global domain counters
+int good_domains = 0;
+int bad_domains  = 0;
 
 // wait for number of ms, uses hardware timer
 void sleep(int millis) {
@@ -20,7 +27,6 @@ void sleep(int millis) {
 	while (*(timer + 3) == 0)
 		;
 	*(timer + 3) = 1; // reset timer flag
-
 }
 
 // check all status register bits in UART core
@@ -125,10 +131,7 @@ long parse_ipd( char * msg, char * domain) {
     char * rest;
     long ret = strtoul(msg, &rest, 10); // Read size of domain name into long, 10 refers to base 10
     rest = rest + 1;                    // remove colon before domain name
-    printf("ipd: %s\n",rest); 
-    
     strcpy(domain,rest);				// copy extracted domain to allocated char array
-
     return ret;
 }
 
@@ -144,6 +147,18 @@ void send_result(int result, long len, char * domain) {
 	receive_single_data(WIFI,wifi_buffer);
 	send_command(WIFI, data);
 	receive_single_data(WIFI,wifi_buffer);
+
+}
+
+void update_counters(long result) {
+
+	if(result) {
+		bad_domains++;
+		*(hex0) = bad_domains;
+	} else {
+		good_domains++;
+		*(hex1) = good_domains;
+	}
 
 }
 
@@ -163,14 +178,9 @@ void handle_wifi_buffer(char * buffer, int buffer_size) {
             char domain[100];                    // allocate space for extracted domain
 
             long len = parse_ipd(raw, domain);   // get domain and data length
-			printf("Extracted domain of size %lu \n", len);
-
             int result = get_result(len);
-			printf("got result %d\n",result);
-
             send_result(result,len,domain);
-			printf("sent result!\n");
-
+			update_counters(result);
 			raw = strtok(NULL, "\r\n");
         } else {
 			printf(raw);
@@ -222,7 +232,7 @@ int main() {
     receive_single_data(BLUETOOTH, bt_buffer);
 
 	// ENTER WIFI PASSWORD HERE
-	send_command(WIFI, "AT+CWJAP_CUR=\"<WIFI NAME HERE>\",\"<WIFI PASSWORD HERE>\"\r\n");
+	send_command(WIFI, WIFI_CONNECT_WITH_PASSWORD);
 	receive_single_data(WIFI, wifi_buffer);
 
 	sleep(10000);
@@ -245,12 +255,23 @@ int main() {
     	    bt_buffer[bt_ptr] = *(bt_uart);
     	    counter = 0;
     	    bt_ptr++;
+
+			if(bt_ptr > 1000) {
+				printf("PANIC: BLUETOOTH OVERFLOW");
+				break;
+			}
+
     	}
 
     	if (can_receive(WIFI)) {
     		wifi_buffer[wifi_ptr] = *(wifi_uart);
     		counter = 0;
     		wifi_ptr++;
+
+			if(wifi_ptr > 1000) {
+				printf("PANIC: WIFI OVERFLOW");
+				break;
+			}
     	}
 
     	counter++;
