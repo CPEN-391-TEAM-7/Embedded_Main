@@ -174,7 +174,8 @@ void handle_wifi_buffer(char * buffer, int buffer_size) {
     {
 		if (strstr(raw,"IPD")) {				 // make sure this is a data string
 
-			printf("Got IPD\n");
+			printf("%s\n", raw);
+
             char domain[100];                    // allocate space for extracted domain
 
             long len = parse_ipd(raw, domain);   // get domain and data length
@@ -210,44 +211,32 @@ int main() {
 
     int action_counter = 0;
 
-    send_command(BLUETOOTH, "AT\r\n");
+    send_command(BLUETOOTH, "AT+UART=38400,0,0\r\n"); // set correct UART settings
     receive_single_data(BLUETOOTH, bt_buffer);
 
-    send_command(BLUETOOTH, "AT+UART=38400,0,0\r\n");
+    send_command(BLUETOOTH, "AT+INIT\r\n"); // initialize bluetooth 
     receive_single_data(BLUETOOTH, bt_buffer);
 
-    send_command(BLUETOOTH, "AT+VERSION?\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
-
-    send_command(BLUETOOTH, "AT+ADDR?\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
-
-	send_command(BLUETOOTH, "AT+MRAD?\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
-
-	send_command(BLUETOOTH, "AT+STATE?\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
-
-    send_command(BLUETOOTH, "AT+INIT\r\n");
-    receive_single_data(BLUETOOTH, bt_buffer);
-
-	// ENTER WIFI PASSWORD HERE
+	// WiFi password in separate non-committed file
 	send_command(WIFI, WIFI_CONNECT_WITH_PASSWORD);
 	receive_single_data(WIFI, wifi_buffer);
 
-	sleep(10000);
+	sleep(10000); // wait atleast 10 sec for connection to establish
 
-	send_command(WIFI, "AT+CIFSR\r\n");
+	// display board IP address
+	send_command(WIFI, "AT+CIFSR\r\n"); 
 	receive_single_data(WIFI, wifi_buffer);
 
-	//send_command(WIFI, "AT+CIPMUX=1\r\n");
-	//receive_single_data(WIFI, wifi_buffer);
-
-	send_command(WIFI, "AT+CIPSTART=\"UDP\",\"0.0.0.0\",41234,41234,0\r\n");
+	//start receiving at this port
+	send_command(WIFI, "AT+CIPSTART=\"UDP\",\"0.0.0.0\",41234,41234,0\r\n"); 
 	receive_single_data(WIFI, wifi_buffer);
 
-	// Test Server address
-	//send_command(WIFI, "AT+CIPSTART=1,\"UDP\",\"192.168.1.78\",56789,56789,2\r\n");
+	// turn off command echoing
+	send_command(WIFI, "ATE0\r\n"); 
+	receive_single_data(WIFI, wifi_buffer);
+
+
+	printf("SYSTEM READY\n");
 
     while(1) {
 
@@ -257,7 +246,7 @@ int main() {
     	    bt_ptr++;
 
 			if(bt_ptr > 1000) {
-				printf("PANIC: BLUETOOTH OVERFLOW");
+				printf("PANIC!: BLUETOOTH OVERFLOW");
 				break;
 			}
 
@@ -269,7 +258,7 @@ int main() {
     		wifi_ptr++;
 
 			if(wifi_ptr > 1000) {
-				printf("PANIC: WIFI OVERFLOW");
+				printf("PANIC!: WIFI OVERFLOW");
 				break;
 			}
     	}
