@@ -14,6 +14,8 @@
 #define WIFI       1
 #define BLUETOOTH  0
 
+#define IPD_PREFIX_SIZE 5
+
 //global domain counters
 int good_domains = 0;
 int bad_domains  = 0;
@@ -97,12 +99,12 @@ void send_command(int module, char * cmd) {
         "DIVISOR: *(wifi_uart+4));
 */
 
-int receive_single_data( int module ,char * buffer) {
+int receive_single_data( int module ,char * buffer, int print) {
 
 	int ptr = 0;
 	int counter = 0;
 
-	while (counter < 1000000) {
+	while (counter < 100000) {
 		if (can_receive(module)) {
 	    	if (module == WIFI) buffer[ptr] = *(wifi_uart);
 	    	else                buffer[ptr] = *(bt_uart);
@@ -112,10 +114,12 @@ int receive_single_data( int module ,char * buffer) {
 		counter++;
 	}
 
-	if (ptr > 0) {
-		for (int i =0; i< ptr; i++) {
-			printf("%c",buffer[i]);
-	    }
+	if (print) {
+		if (ptr > 0) {
+			for (int i =0; i< ptr; i++) {
+				printf("%c",buffer[i]);
+		    }
+		}
 	}
 
 	return ptr;
@@ -127,7 +131,7 @@ int get_result(long len) { // temporarily all domains with odd number of charact
 
 long parse_ipd( char * msg, char * domain) {
 
-    msg = msg + 5;                      // Remove string prefix '+IPD' which is 7 characters
+    msg = msg + IPD_PREFIX_SIZE;                      // Remove string prefix '+IPD' which is 5 characters
     char * rest;
     long ret = strtoul(msg, &rest, 10); // Read size of domain name into long, 10 refers to base 10
     rest = rest + 1;                    // remove colon before domain name
@@ -144,9 +148,9 @@ void send_result(int result, long len, char * domain) {
     char data[100];								// allocate space for data to be sent
     sprintf(data,"%s%d",domain,result);			// create sending data
 	send_command(WIFI, cmd);
-	receive_single_data(WIFI,wifi_buffer);
+	receive_single_data(WIFI,wifi_buffer,0);
 	send_command(WIFI, data);
-	receive_single_data(WIFI,wifi_buffer);
+	receive_single_data(WIFI,wifi_buffer,0);
 
 }
 
@@ -174,7 +178,7 @@ void handle_wifi_buffer(char * buffer, int buffer_size) {
     {
 		if (strstr(raw,"IPD")) {				 // make sure this is a data string
 
-			printf("%s\n", raw);
+			//printf("%s\n", raw);
 
             char domain[100];                    // allocate space for extracted domain
 
@@ -212,28 +216,28 @@ int main() {
     int action_counter = 0;
 
     send_command(BLUETOOTH, "AT+UART=38400,0,0\r\n"); // set correct UART settings
-    receive_single_data(BLUETOOTH, bt_buffer);
+    receive_single_data(BLUETOOTH, bt_buffer,1);
 
     send_command(BLUETOOTH, "AT+INIT\r\n"); // initialize bluetooth 
-    receive_single_data(BLUETOOTH, bt_buffer);
+    receive_single_data(BLUETOOTH, bt_buffer,1);
 
 	// WiFi password in separate non-committed file
 	send_command(WIFI, WIFI_CONNECT_WITH_PASSWORD);
-	receive_single_data(WIFI, wifi_buffer);
+	receive_single_data(WIFI, wifi_buffer,1);
 
 	sleep(10000); // wait atleast 10 sec for connection to establish
 
 	// display board IP address
 	send_command(WIFI, "AT+CIFSR\r\n"); 
-	receive_single_data(WIFI, wifi_buffer);
+	receive_single_data(WIFI, wifi_buffer,1);
 
 	//start receiving at this port
 	send_command(WIFI, "AT+CIPSTART=\"UDP\",\"0.0.0.0\",41234,41234,0\r\n"); 
-	receive_single_data(WIFI, wifi_buffer);
+	receive_single_data(WIFI, wifi_buffer,1);
 
 	// turn off command echoing
 	send_command(WIFI, "ATE0\r\n"); 
-	receive_single_data(WIFI, wifi_buffer);
+	receive_single_data(WIFI, wifi_buffer,1);
 
 
 	printf("SYSTEM READY\n");
