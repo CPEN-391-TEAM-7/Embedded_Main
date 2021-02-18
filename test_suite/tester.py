@@ -1,6 +1,8 @@
 import socket
 import time
 
+delay = 3
+
 def fail(msg):
     print("TEST FAILED: ",msg)
     exit()
@@ -27,7 +29,7 @@ if(response == "facebook.com0"):
 else:
     fail(response)
 
-time.sleep(5)
+time.sleep(delay)
 
 ####################################################################
 # TEST 2, sending and receing a bad single domain
@@ -43,7 +45,7 @@ if(response == "badnet.hack1"):
 else:
     fail(response)
 
-time.sleep(5)
+time.sleep(delay)
 
 ####################################################################
 # TEST 3, sending 2 good domains at once
@@ -68,7 +70,7 @@ while d1 or d2:
         fail("Unexpected response: " + response)
 
 
-time.sleep(5)
+time.sleep(delay)
 
 ####################################################################
 # TEST 4, sending good domain and bad domain at once
@@ -93,7 +95,7 @@ while d1 or d2:
         fail("Unexpected response: " + response)
 
 
-time.sleep(5)
+time.sleep(delay)
 
 ####################################################################
 # TEST 5, sending 10 domains at once
@@ -128,6 +130,6 @@ while count < 10:
 
 
 
-time.sleep(5)
+time.sleep(delay)
 
 print("ALL TESTS PASSED")

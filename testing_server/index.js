@@ -8,7 +8,15 @@ domains = [
     "instagram.com",
     "bit.ly",
     "gmpg.org",
-    "s.w.org"
+    "s.w.org",
+    "quest.com",
+    "mongodb.net",
+    "reddit.com",
+    "ubc.com",
+    "ubyssey.net",
+    "viruz.hack",
+    "sfu.ca",
+    "pigeons.x",
 ]
 
 
@@ -16,11 +24,12 @@ client.bind(56789);
 
 var size = domains.length
 
-
-var random = domains[Math.floor(Math.random()*size)];
-const message = Buffer.from(random);
-client.send(message, 41234, '192.168.1.74');
-console.log("sending...");
+setInterval( () => {
+    var random = domains[Math.floor(Math.random()*size)];
+    const message = Buffer.from(random);
+    client.send(message, 41234, '192.168.1.123');
+    console.log("sending...");
+}, 1000);
 
 
 client.on("message",(msg, remote) => {
