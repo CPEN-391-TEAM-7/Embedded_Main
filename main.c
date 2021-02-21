@@ -2,17 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "wifi_password.h"
-
-#define leds       (volatile int *) 0xFF200020
-#define wifi_uart  (volatile int *) 0xFF200060
-#define wifi_reset (volatile int *) 0xFF200080
-#define bt_uart    (volatile int *) 0xFF200100
-#define timer      (volatile int *) 0xFFFEC600
-#define hex0       (volatile int *) 0xFF200030
-#define hex1       (volatile int *) 0xFF200040
-
-#define WIFI       1
-#define BLUETOOTH  0
+#include "registers.h"
 
 #define IPD_PREFIX_SIZE 5
 
@@ -31,36 +21,6 @@ void sleep(int millis) {
 	*(timer + 3) = 1; // reset timer flag
 }
 
-// check all status register bits in UART core
-void check_status(int module) {
-
-	int status;
-
-	if (module == WIFI) status = *(wifi_uart+2);
-	else                status = *(bt_uart+2);
-
-	printf("status = %x\n",status);
-	printf("parityerror %x\n",(status & (1 << 0)));
-	printf("frame error %x\n",(status & (1 << 1)));
-	printf("brk  detect %x\n",(status & (1 << 2)));
-	printf("rx overrun  %x\n",(status & (1 << 3)));
-	printf("tx overrun  %x\n",(status & (1 << 4)));
-	printf("tx empty    %x\n",(status & (1 << 5)));
-	printf("tx ready    %x\n",(status & (1 << 6)));
-	printf("rx ready    %x\n",(status & (1 << 7)));
-	printf("ERROR       %x\n",(status & (1 << 8)));
-	printf("dclr to snd %x\n",(status & (1 << 10)));
-	printf("clr to snd  %x\n",(status & (1 << 11)));
-	printf("eop         %x\n",(status & (1 << 12)));
-	printf("\n\n");
-}
-
-int can_receive(int module) {
-	if (module == WIFI) return *(wifi_uart+2) & 1 << 7;
-	else                return *(  bt_uart+2) & 1 << 7;
-}
-
-
 void reset_wifi(){
 
 	// reset value should start at 0
@@ -77,53 +37,6 @@ void reset_bluetooth(){
 	*(bt_uart+2) = 0;
 }
 
-int can_transmit(int module) {
-	if (module == WIFI) return *(wifi_uart+2) & 1 << 6;
-	else                return *(  bt_uart+2) & 1 << 6;
-}
-
-void send_command(int module, char * cmd) {
-    for (char * i = cmd; *i != '\0'; i++) {
-    	while(!can_transmit(module));
-    	if (module == WIFI) *(wifi_uart+1) = *i;
-    	else                *(  bt_uart+1) = *i;
-    }
-}
-
-/*
-        "RXDATA:  *(wifi_uart));
-        "TXDATA:  *(wifi_uart+1));
-        "STATUS:  *(wifi_uart+2));
-        "DIVISOR: *(wifi_uart+5));
-        "CONTROL: *(wifi_uart+3));
-        "DIVISOR: *(wifi_uart+4));
-*/
-
-int receive_single_data( int module ,char * buffer, int print) {
-
-	int ptr = 0;
-	int counter = 0;
-
-	while (counter < 100000) {
-		if (can_receive(module)) {
-	    	if (module == WIFI) buffer[ptr] = *(wifi_uart);
-	    	else                buffer[ptr] = *(bt_uart);
-	    	counter = 0;
-	    	ptr++;
-		}
-		counter++;
-	}
-
-	if (print) {
-		if (ptr > 0) {
-			for (int i =0; i< ptr; i++) {
-				printf("%c",buffer[i]);
-		    }
-		}
-	}
-
-	return ptr;
-}
 
 int get_result(long len) { // temporarily all domains with odd number of characters are malware
     return (len % 2);
