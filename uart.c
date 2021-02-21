@@ -82,6 +82,22 @@ int receive_single_data( int module ,char * buffer, int print) {
 	return ptr;
 }
 
+void reset_wifi(){
+
+	// reset value should start at 0
+	// set it manually to 0 just to be sure
+	*(wifi_reset) = 0;
+	sleep(1000);
+    *(wifi_reset) = 1;
+
+    // reset status register
+	*(wifi_uart+2) = 0;
+}
+
+void reset_bluetooth(){
+	*(bt_uart+2) = 0;
+}
+
 // check all status register bits in UART core
 void check_status(int module) {
 

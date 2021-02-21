@@ -10,6 +10,8 @@
 
 /* ******************************************************************************** */
 // GLOBAL VARIABLES
+/* ******************************************************************************** */
+
 //global domain counters for hex display
 int good_domains = 0;
 int bad_domains  = 0;
@@ -34,23 +36,6 @@ void sleep(int millis) {
 		;
 	*(timer + 3) = 1; // reset timer flag
 }
-
-void reset_wifi(){
-
-	// reset value should start at 0
-	// set it manually to 0 just to be sure
-	*(wifi_reset) = 0;
-	sleep(1000);
-    *(wifi_reset) = 1;
-
-    // reset status register
-	*(wifi_uart+2) = 0;
-}
-
-void reset_bluetooth(){
-	*(bt_uart+2) = 0;
-}
-
 
 
 int get_result(long len) { // temporarily all domains with odd number of characters are malware
@@ -96,9 +81,9 @@ void update_counters(long result) {
 
 void handle_wifi_buffer(char * buffer, int buffer_size) {
 
-	char buff_copy[1000];                     // make same size as receiving buffer, just in case
-	strncpy(buff_copy, buffer, buffer_size);  // copy only the valid characters
-	buff_copy[buffer_size] = 0;               // add null terminator
+	char buff_copy[1000];               // make same size as receiving buffer, just in case
+	strcpy(buff_copy, buffer);  		// copy up to null terminator
+	buff_copy[buffer_size] = 0;         // add null terminator?
 
 	char * raw = strtok(buff_copy, "\r\n");	  // split buffer wherever there is a new line
 
