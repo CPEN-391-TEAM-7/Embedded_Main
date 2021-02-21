@@ -6,12 +6,31 @@
         "RXDATA:  *(wifi_uart));
         "TXDATA:  *(wifi_uart+1));
         "STATUS:  *(wifi_uart+2));
-        "DIVISOR: *(wifi_uart+5));
         "CONTROL: *(wifi_uart+3));
         "DIVISOR: *(wifi_uart+4));
 */
 
+// enable interrupts for either module
+// write 1 to bit 7 of the control register
+void enable_uart_read_irq(int module) {
+    
+    if(module == WIFI) {
+        *(wifi_uart + 2) = 0;
+        *(wifi_uart + 3) = 0x1 << 7;
+    } else {
+        *(bt_uart + 2) = 0;
+        *(bt_uart + 3) = 0x1 << 7;
+    }
+}
 
+// disable interrupts for either module
+// write 0 to bit 7 of the control register
+void disable_uart_read_irq(int module) {
+    
+    if(module == WIFI) *(wifi_uart + 3) = 0;
+    else *(bt_uart + 3) = 0;
+    
+}
 
 // check if transmit ready bit is high in UART controller
 int can_transmit(int module) {

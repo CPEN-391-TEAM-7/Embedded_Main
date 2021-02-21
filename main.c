@@ -159,6 +159,15 @@ int main() {
 	send_command(WIFI, "ATE0\r\n"); 
 	receive_single_data(WIFI, wifi_buffer,1);
 
+	printf("Initialzing interrupts");
+	// Initialzing interrupts
+	disable_A9_interrupts ();	// disable interrupts in the A9 processor
+	set_A9_IRQ_stack ();	    // initialize the stack pointer for IRQ mode
+	config_GIC ();				// configure the general interrupt controller
+	enable_uart_read_irq(WIFI);	// turn on wifi receiving interrupt
+	enable_uart_read_irq(BLUETOOTH); // turn on bluetooth receiving interrupt
+
+	enable_A9_interrupts ();	// enable interrupts in the A9 processor
 
 	printf("SYSTEM READY\n");
 
