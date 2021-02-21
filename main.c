@@ -83,7 +83,8 @@ void handle_wifi_buffer() {
 
 	char buff_copy[1000];               // make same size as receiving buffer, just in case
 	disable_uart_read_irq(WIFI);		// disable interrupt before copying buffer so data is not modified during copy
-	strcpy(buff_copy, wifi_buffer);  		// copy up to null terminator
+	strcpy(buff_copy, wifi_buffer);  	// copy up to null terminator
+	wifi_buffer[0] = 0					// clear wifi buffer
 	enable_uart_read_irq(WIFI); 		// renable interrupt once data is copied
 
 	printf("%s",wifi_buffer);
@@ -91,7 +92,7 @@ void handle_wifi_buffer() {
 
 	//buff_copy[buffer_size] = 0;         // add null terminator?
 
-
+	/* DEAD CODE
 	char * raw = strtok(buff_copy, "\r\n");	  // split buffer wherever there is a new line
 
     while (raw != NULL)
@@ -112,7 +113,7 @@ void handle_wifi_buffer() {
 			raw = strtok(NULL, "\r\n");
 		}
     }
-	
+	*/
 
 }
 
