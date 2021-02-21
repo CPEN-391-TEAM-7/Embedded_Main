@@ -1,9 +1,6 @@
 
+#include "uart.h"
 #include "registers.h"
-
-// used to choose the UART controller for each module
-#define WIFI       1
-#define BLUETOOTH  0
 
 /*
         "RXDATA:  *(wifi_uart));
