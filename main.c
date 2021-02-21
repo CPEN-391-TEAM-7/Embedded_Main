@@ -1,14 +1,28 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "wifi_password.h"
 #include "registers.h"
+#include "uart.h"
 
 #define IPD_PREFIX_SIZE 5
 
-//global domain counters
+/* ******************************************************************************** */
+// GLOBAL VARIABLES
+//global domain counters for hex display
 int good_domains = 0;
 int bad_domains  = 0;
+
+// global buffers reachable from ISRs
+char wifi_buffer[1000];
+char   bt_buffer[1000];
+
+// global line counters
+int wifi_lines = 0;
+int   bt_lines = 0;
+
+/* ******************************************************************************** */
 
 // wait for number of ms, uses hardware timer
 void sleep(int millis) {
@@ -36,6 +50,7 @@ void reset_wifi(){
 void reset_bluetooth(){
 	*(bt_uart+2) = 0;
 }
+
 
 
 int get_result(long len) { // temporarily all domains with odd number of characters are malware
@@ -118,14 +133,6 @@ int main() {
 	reset_bluetooth();
 	sleep(1000);
 
-    char wifi_buffer[1000];
-    char   bt_buffer[1000];
-
-    int counter = 0;
-
-    int wifi_ptr = 0;
-    int bt_ptr   = 0;
-
     int action_counter = 0;
 
     send_command(BLUETOOTH, "AT+UART=38400,0,0\r\n"); // set correct UART settings
@@ -155,54 +162,7 @@ int main() {
 
 	printf("SYSTEM READY\n");
 
-    while(1) {
+    while(1)
+		;
 
-    	if (can_receive(BLUETOOTH)) {
-    	    bt_buffer[bt_ptr] = *(bt_uart);
-    	    counter = 0;
-    	    bt_ptr++;
-
-			if(bt_ptr > 1000) {
-				printf("PANIC!: BLUETOOTH OVERFLOW");
-				break;
-			}
-
-    	}
-
-    	if (can_receive(WIFI)) {
-    		wifi_buffer[wifi_ptr] = *(wifi_uart);
-    		counter = 0;
-    		wifi_ptr++;
-
-			if(wifi_ptr > 1000) {
-				printf("PANIC!: WIFI OVERFLOW");
-				break;
-			}
-    	}
-
-    	counter++;
-    	if (counter == 1000000) {
-
-    		// Get cool LED visuals
-    		action_counter++;
-    		*(leds) = action_counter;
-
-    		// handle all buffered wifi responses
-    		if (wifi_ptr > 0) {
-				handle_wifi_buffer(wifi_buffer,wifi_ptr);
-    			wifi_ptr = 0;
-    		}
-
-    		// read all buffered bluetooth responses
-    		if (bt_ptr > 0) {
-    			printf("\nBluetooth message: ");
-    			for (int i =0; i< bt_ptr; i++) {
-    				printf("%c",bt_buffer[i]);
-    			}
-    			bt_ptr = 0;
-    		}
-
-    		counter = 0;
-    	}
-    }
 }

@@ -11,6 +11,8 @@
         "DIVISOR: *(wifi_uart+4));
 */
 
+
+
 // check if transmit ready bit is high in UART controller
 int can_transmit(int module) {
 	if (module == WIFI) return *(wifi_uart+2) & 1 << 6;
