@@ -5,6 +5,7 @@
 #include "wifi_password.h"
 #include "registers.h"
 #include "uart.h"
+#include "interrupts.h"
 
 #define IPD_PREFIX_SIZE 5
 
@@ -84,7 +85,7 @@ void handle_wifi_buffer() {
 	char buff_copy[1000];               // make same size as receiving buffer, just in case
 	disable_uart_read_irq(WIFI);		// disable interrupt before copying buffer so data is not modified during copy
 	strcpy(buff_copy, wifi_buffer);  	// copy up to null terminator
-	wifi_buffer[0] = 0					// clear wifi buffer
+	wifi_buffer[0] = 0;					// clear wifi buffer
 	enable_uart_read_irq(WIFI); 		// renable interrupt once data is copied
 
 	printf("%s",wifi_buffer);
@@ -118,7 +119,7 @@ void handle_wifi_buffer() {
 }
 
 void handle_bt_buffer() {
-	printf("%s",buffer);
+	printf("%s",bt_buffer);
     bt_lines--;
 }
 

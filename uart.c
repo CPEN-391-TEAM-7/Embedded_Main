@@ -1,4 +1,4 @@
-
+#include <stdio.h>
 #include "uart.h"
 #include "registers.h"
 

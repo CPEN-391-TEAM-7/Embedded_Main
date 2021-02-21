@@ -15,7 +15,7 @@ void bt_read_ready_ISR(void) {
 
         char data = *(bt_uart);
         strncat(bt_buffer,&data,1);
-        if(data == '\n') line_reached = 1;
+        if(data == '\n') bt_lines++;
 
     }
 
