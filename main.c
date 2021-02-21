@@ -79,11 +79,18 @@ void update_counters(long result) {
 
 }
 
-void handle_wifi_buffer(char * buffer, int buffer_size) {
+void handle_wifi_buffer() {
 
 	char buff_copy[1000];               // make same size as receiving buffer, just in case
-	strcpy(buff_copy, buffer);  		// copy up to null terminator
-	buff_copy[buffer_size] = 0;         // add null terminator?
+	disable_uart_read_irq(WIFI);		// disable interrupt before copying buffer so data is not modified during copy
+	strcpy(buff_copy, wifi_buffer);  		// copy up to null terminator
+	enable_uart_read_irq(WIFI); 		// renable interrupt once data is copied
+
+	printf("%s",wifi_buffer);
+	return; // temporarily don't do anything to handle wifi data
+
+	//buff_copy[buffer_size] = 0;         // add null terminator?
+
 
 	char * raw = strtok(buff_copy, "\r\n");	  // split buffer wherever there is a new line
 
@@ -105,7 +112,13 @@ void handle_wifi_buffer(char * buffer, int buffer_size) {
 			raw = strtok(NULL, "\r\n");
 		}
     }
+	
 
+}
+
+void handle_bt_buffer() {
+	printf("%s",buffer);
+    bt_lines--;
 }
 
 int main() {
@@ -156,7 +169,9 @@ int main() {
 
 	printf("SYSTEM READY\n");
 
-    while(1)
-		;
+    while(1) {
+		if (wifi_lines > 0) handle_wifi_buffer();
+		if (bt_lines   > 0) handle_bt_buffer();
+	}
 
 }
