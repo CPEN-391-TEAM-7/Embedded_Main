@@ -69,7 +69,9 @@ void update_counters(long result) {
 
 }
 
-void handle_wifi_buffer() {
+void xhandle_wifi_buffer() {
+
+	update_counters(0);
 
 	char buff_copy[1000];               // make same size as receiving buffer, just in case
 	disable_uart_read_irq(WIFI);		// disable interrupt before copying buffer so data is not modified during copy
@@ -77,7 +79,7 @@ void handle_wifi_buffer() {
 	wifi_buffer[0] = 0;					// clear wifi buffer
 	enable_uart_read_irq(WIFI); 		// renable interrupt once data is copied
 
-	printf("%s",wifi_buffer);
+	printf("%s",buff_copy);
 	return; // temporarily don't do anything to handle wifi data
 
 	//buff_copy[buffer_size] = 0;         // add null terminator?
@@ -108,11 +110,25 @@ void handle_wifi_buffer() {
 }
 
 void handle_bt_buffer() {
+
+	update_counters(0);
 	printf("%s",bt_buffer);
-    bt_lines--;
+	bt_buffer[0] = 0;
+    bt_lines     = 0;
+}
+
+void handle_wifi_buffer() {
+
+	update_counters(1);
+	//printf("%s",wifi_buffer);
+	wifi_buffer[0] = 0;
+    wifi_lines--;
 }
 
 int main() {
+
+	disable_uart_read_irq(WIFI);	  // turn off wifi receiving interrupt
+	disable_uart_read_irq(BLUETOOTH); // turn off bluetooth receiving interrupt
 
 	printf("initializing WiFi\n");
 	reset_wifi();
@@ -146,7 +162,10 @@ int main() {
 	send_command(WIFI, "ATE0\r\n"); 
 	receive_single_data(WIFI, wifi_buffer,1);
 
-	printf("Initialzing interrupts");
+	sleep(5000); // wait 5 seconds for all polling commands to settle
+
+
+	printf("Initialzing interrupts\n");
 	// Initialzing interrupts
 	disable_A9_interrupts ();	// disable interrupts in the A9 processor
 	set_A9_IRQ_stack ();	    // initialize the stack pointer for IRQ mode

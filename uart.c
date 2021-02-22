@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+
 #include "uart.h"
 #include "interrupts.h"
 #include "registers.h"
@@ -29,7 +31,7 @@ void enable_uart_read_irq(int module) {
 void disable_uart_read_irq(int module) {
     
     if(module == WIFI) *(wifi_uart + 3) = 0;
-    else *(bt_uart + 3) = 0;
+    else                 *(bt_uart + 3) = 0;
     
 }
 
@@ -59,32 +61,25 @@ int can_receive(int module) {
 
 // receive uart data by using polling instead of interrupts.
 // useful during setup phase
-int receive_single_data( int module ,char * buffer, int print) {
+void receive_single_data( int module ,char * buffer, int print) {
 
-	int ptr = 0;
 	int counter = 0;
 
 	while (counter < 100000) {
 		if (can_receive(module)) {
-	    	if (module == WIFI) buffer[ptr] = *(wifi_uart);
-	    	else                buffer[ptr] = *(bt_uart);
-	    	counter = 0;
-	    	ptr++;
+			char data;
+	    	if (module == WIFI) data = *(wifi_uart);
+	    	else                data = *(bt_uart);
+			strncat(buffer,&data,1);
 		}
 		counter++;
 	}
 
 	if (print) {
-		if (ptr > 0) {
-			int i = 0;
-			while (i < ptr) {
-				printf("%c",buffer[i]);
-				i++;
-			}
-		}
+		printf("%s",buffer);
 	}
 
-	return ptr;
+	buffer[0] = 0;
 }
 
 void reset_wifi(){

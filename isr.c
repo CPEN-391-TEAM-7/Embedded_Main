@@ -29,11 +29,11 @@ void bt_read_ready_ISR(void) {
 
 void wifi_read_ready_ISR(void) {
 
-    while (can_receive(BLUETOOTH)) { 
+    while (can_receive(WIFI)) { 
 
         char data = *(wifi_uart);
         strncat(wifi_buffer,&data,1);
-        if(data == '\n') wifi_lines++;
+        if(data == '\r') wifi_lines++;
 
     }
 
