@@ -10,3 +10,5 @@ void set_A9_IRQ_stack (void);
 void config_GIC (void);
 void config_bt (void);
 void enable_A9_interrupts (void);
+void config_interrupt(int,int);
+void sleep(int millis);

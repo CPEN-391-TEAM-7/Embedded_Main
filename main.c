@@ -27,17 +27,6 @@ int   bt_lines = 0;
 
 /* ******************************************************************************** */
 
-// wait for number of ms, uses hardware timer
-void sleep(int millis) {
-
-	int ticks    = millis*200000; // 200E6 ticks is one second
-	*(timer)     = ticks;
-	*(timer + 2) = 1; // prevent timer from restarting automatically
-	while (*(timer + 3) == 0)
-		;
-	*(timer + 3) = 1; // reset timer flag
-}
-
 
 int get_result(long len) { // temporarily all domains with odd number of characters are malware
     return (len % 2);
@@ -132,8 +121,6 @@ int main() {
 	printf("initializing Bluetooth\n");
 	reset_bluetooth();
 	sleep(1000);
-
-    int action_counter = 0;
 
     send_command(BLUETOOTH, "AT+UART=38400,0,0\r\n"); // set correct UART settings
     receive_single_data(BLUETOOTH, bt_buffer,1);

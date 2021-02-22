@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+
+#include "interrupts.h"
 #include "registers.h" 
+#include "isr.h"
+
 
 /* ********************************************************************************
  * This file contains code adapted from the intel documentation for using the ARM GIC
@@ -9,10 +13,8 @@
  ********************************************************************************/
 
 
-#define FPGA_IRQ4 76
-
-void bt_ready_ISR(void);
-void config_interrupt(int,int);
+#define BLUETOOTH_IRQ4 76
+#define WIFI_IRQ3      75
 
 extern char buffer[1000];
 extern int buffer_ptr;
@@ -21,15 +23,12 @@ extern int line_reached;
 int data_count = 0;
 int line_count = 0;
 
-int can_receive() {
-    return *(  bt_uart+2) & 1 << 7;
-}
-
 void __attribute__ ((interrupt)) __cs3_isr_irq (void) {
 
     int interrupt_id = *(ICCIAR);
 
-    if (interrupt_id == FPGA_IRQ4) bt_ready_ISR();
+    if (interrupt_id == BLUETOOTH_IRQ4) bt_read_ready_ISR();
+    else if (interrupt_id == WIFI_IRQ3) wifi_read_ready_ISR();
 	else
 		while (1);			
 
@@ -86,7 +85,8 @@ void enable_A9_interrupts(void) {
 void config_GIC(void) {
     // configure the interrupt for IRQ level 4
     // which is the Bluetooth module on CPU 1
-    config_interrupt(FPGA_IRQ4,1);
+    config_interrupt(BLUETOOTH_IRQ4,1);
+    config_interrupt(WIFI_IRQ3,1);
 
     *(ICCPMR) = 0xFFFF; // Enable interrupts of all priorities
     *(ICCICR) = 1;      // Enable signaling of interrupts
@@ -116,3 +116,13 @@ void config_interrupt(int N,int CPU_target) {
 }
 
 
+// wait for number of ms, uses hardware timer
+void sleep(int millis) {
+
+	int ticks    = millis*200000; // 200E6 ticks is one second
+	*(timer)     = ticks;
+	*(timer + 2) = 1; // prevent timer from restarting automatically
+	while (*(timer + 3) == 0)
+		;
+	*(timer + 3) = 1; // reset timer flag
+}

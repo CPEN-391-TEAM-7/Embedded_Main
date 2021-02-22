@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "uart.h"
+#include "interrupts.h"
 #include "registers.h"
 
 /*
@@ -40,10 +41,12 @@ int can_transmit(int module) {
 
 // sends chars to UART controller as long as it can transmit
 void send_command(int module, char * cmd) {
-    for (char * i = cmd; *i != '\0'; i++) {
+	char * i = cmd;
+    while( *i != '\0') {
     	while(!can_transmit(module));
     	if (module == WIFI) *(wifi_uart+1) = *i;
     	else                *(  bt_uart+1) = *i;
+		i++;
     }
 }
 
@@ -73,9 +76,11 @@ int receive_single_data( int module ,char * buffer, int print) {
 
 	if (print) {
 		if (ptr > 0) {
-			for (int i =0; i< ptr; i++) {
+			int i = 0;
+			while (i < ptr) {
 				printf("%c",buffer[i]);
-		    }
+				i++;
+			}
 		}
 	}
 
