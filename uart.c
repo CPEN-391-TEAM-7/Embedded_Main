@@ -45,7 +45,7 @@ int can_transmit(int module) {
 void send_command(int module, char * cmd) {
 	char * i = cmd;
     while( *i != '\0') {
-    	while(!can_transmit(module));
+    	while(!can_transmit(module) );
     	if (module == WIFI) *(wifi_uart+1) = *i;
     	else                *(  bt_uart+1) = *i;
 		i++;
@@ -60,7 +60,7 @@ int can_receive(int module) {
 
 
 // receive uart data by using polling instead of interrupts.
-// useful during setup phase
+// useful during setup phase before interrupts
 void receive_single_data( int module ,char * buffer, int print) {
 
 	int counter = 0;

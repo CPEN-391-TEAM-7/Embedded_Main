@@ -22,8 +22,15 @@ char wifi_buffer[1000];
 char   bt_buffer[1000];
 
 // global line counters
-int wifi_lines = 0;
-int   bt_lines = 0;
+volatile int wifi_lines = 0;
+volatile int   bt_lines = 0;
+
+// global enable controlled by bluetooth
+volatile int enable_rnn = 1;
+
+// global send signal controlled by wifi
+volatile int send_now = 0;
+volatile int echo_off = 0;
 
 /* ******************************************************************************** */
 
@@ -44,16 +51,18 @@ long parse_ipd( char * msg, char * domain) {
 
 void send_result(int result, long len, char * domain) {
     
-	char wifi_buffer[1000];
-
     char cmd[100];								// allocate space for AT command
-    sprintf(cmd,"AT+CIPSENDEX=%lu,\"34.216.108.218\",8082\r\n",len+1);		// create AT command
+    //sprintf(cmd,"AT+CIPSENDEX=%lu,\"34.216.108.218\",8082\r\n",len+1);		// create AT command (ACTUAL BACKEND)
+	sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.78\",8082\r\n",len);		// create AT command
     char data[100];								// allocate space for data to be sent
     sprintf(data,"%s%d",domain,result);			// create sending data
 	send_command(WIFI, cmd);
-	receive_single_data(WIFI,wifi_buffer,0);
+	int timeout = 100000;
+	while(!send_now && timeout > 0) {
+		timeout--;
+	}
 	send_command(WIFI, data);
-	receive_single_data(WIFI,wifi_buffer,0);
+	send_now = 0;
 
 }
 
@@ -69,66 +78,42 @@ void update_counters(long result) {
 
 }
 
-void xhandle_wifi_buffer() {
-
-	update_counters(0);
+void handle_wifi_buffer() {
 
 	char buff_copy[1000];               // make same size as receiving buffer, just in case
+	buff_copy[0] = 0;
 	disable_uart_read_irq(WIFI);		// disable interrupt before copying buffer so data is not modified during copy
 	strcpy(buff_copy, wifi_buffer);  	// copy up to null terminator
+	echo_off = 1;
 	wifi_buffer[0] = 0;					// clear wifi buffer
+	wifi_lines--;
 	enable_uart_read_irq(WIFI); 		// renable interrupt once data is copied
 
-	printf("%s",buff_copy);
-	return; // temporarily don't do anything to handle wifi data
-
-	//buff_copy[buffer_size] = 0;         // add null terminator?
-
-	/* DEAD CODE
-	char * raw = strtok(buff_copy, "\r\n");	  // split buffer wherever there is a new line
-
-    while (raw != NULL)
-    {
-		if (strstr(raw,"IPD")) {				 // make sure this is a data string
-
-			//printf("%s\n", raw);
-
-            char domain[100];                    // allocate space for extracted domain
-
-            long len = parse_ipd(raw, domain);   // get domain and data length
-            int result = get_result(len);
-            send_result(result,len,domain);
-			update_counters(result);
-			raw = strtok(NULL, "\r\n");
-        } else {
-			printf(raw);
-			raw = strtok(NULL, "\r\n");
-		}
-    }
-	*/
+	if(strstr(buff_copy,"IPD")) {
+		char domain[100];       					// allocate space for extracted domain
+		long len = parse_ipd(buff_copy, domain);	// get domain and data length
+		int result = get_result(len);
+		send_result(result,len,domain);
+		update_counters(result);
+	} 
 
 }
 
 void handle_bt_buffer() {
 
-	update_counters(0);
 	printf("%s",bt_buffer);
 	bt_buffer[0] = 0;
     bt_lines     = 0;
-}
-
-void handle_wifi_buffer() {
-
-	update_counters(1);
-	//printf("%s",wifi_buffer);
-	wifi_buffer[0] = 0;
-    wifi_lines--;
 }
 
 int main() {
 
 	disable_uart_read_irq(WIFI);	  // turn off wifi receiving interrupt
 	disable_uart_read_irq(BLUETOOTH); // turn off bluetooth receiving interrupt
+
+	// clear buffers
+	wifi_buffer[0] = 0;
+	bt_buffer[0]   = 0;
 
 	printf("initializing WiFi\n");
 	reset_wifi();
@@ -162,10 +147,13 @@ int main() {
 	send_command(WIFI, "ATE0\r\n"); 
 	receive_single_data(WIFI, wifi_buffer,1);
 
+	printf("Enabling interrupts\n");
 	sleep(5000); // wait 5 seconds for all polling commands to settle
 
+	// clear buffers
+	wifi_buffer[0] = 0;
+	bt_buffer[0]   = 0;
 
-	printf("Initialzing interrupts\n");
 	// Initialzing interrupts
 	disable_A9_interrupts ();	// disable interrupts in the A9 processor
 	set_A9_IRQ_stack ();	    // initialize the stack pointer for IRQ mode
@@ -178,7 +166,7 @@ int main() {
 	printf("SYSTEM READY\n");
 
     while(1) {
-		if (wifi_lines > 0) handle_wifi_buffer();
+		if (wifi_lines > 0 && enable_rnn) handle_wifi_buffer();
 		if (bt_lines   > 0) handle_bt_buffer();
 	}
 
