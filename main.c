@@ -10,7 +10,7 @@
 #define IPD_PREFIX_SIZE 5
 
 /* ******************************************************************************** */
-// GLOBAL VARIABLES
+// GLOBAL VARIABLES (required for passing data from ISRs)
 /* ******************************************************************************** */
 
 //global domain counters for hex display
@@ -30,7 +30,7 @@ volatile int enable_rnn = 1;
 
 // global send signal controlled by wifi
 volatile int send_now = 0;
-volatile int echo_off = 0;
+volatile int handle_enable = 1;
 
 /* ******************************************************************************** */
 
@@ -57,13 +57,11 @@ void send_result(int result, long len, char * domain) {
     char data[100];								// allocate space for data to be sent
     sprintf(data,"%s%d",domain,result);			// create sending data
 	send_command(WIFI, cmd);
-	int timeout = 100000;
-	while(!send_now && timeout > 0) {
-		timeout--;
-	}
+
+	while(!send_now);
 	send_command(WIFI, data);
 	send_now = 0;
-
+	sleep(25);
 }
 
 void update_counters(long result) {
@@ -82,28 +80,29 @@ void handle_wifi_buffer() {
 
 	char buff_copy[1000];               // make same size as receiving buffer, just in case
 	buff_copy[0] = 0;
+
 	disable_uart_read_irq(WIFI);		// disable interrupt before copying buffer so data is not modified during copy
 	strcpy(buff_copy, wifi_buffer);  	// copy up to null terminator
-	echo_off = 1;
 	wifi_buffer[0] = 0;					// clear wifi buffer
-	wifi_lines--;
+	wifi_lines = 0;
 	enable_uart_read_irq(WIFI); 		// renable interrupt once data is copied
 
-	if(strstr(buff_copy,"IPD")) {
-		char domain[100];       					// allocate space for extracted domain
-		long len = parse_ipd(buff_copy, domain);	// get domain and data length
-		int result = get_result(len);
-		send_result(result,len,domain);
-		update_counters(result);
-	} 
+	char * raw = strtok(buff_copy, "\n");
 
-}
+	while( raw != NULL) {
 
-void handle_bt_buffer() {
+		if(strstr(raw,"IPD")) {
+			char domain[100];       			// allocate space for extracted domain
+			long len = parse_ipd(raw, domain);	// get domain and data length
+			int result = get_result(len-1);
+			send_result(result,len,domain);
+			update_counters(result);
+			raw = strtok(NULL, "\n");
+		} else {
+			raw = strtok(NULL, "\n");
+		}
+	}
 
-	printf("%s",bt_buffer);
-	bt_buffer[0] = 0;
-    bt_lines     = 0;
 }
 
 int main() {
@@ -166,8 +165,7 @@ int main() {
 	printf("SYSTEM READY\n");
 
     while(1) {
-		if (wifi_lines > 0 && enable_rnn) handle_wifi_buffer();
-		if (bt_lines   > 0) handle_bt_buffer();
+		if (wifi_lines > 0 && handle_enable && enable_rnn) handle_wifi_buffer();
 	}
 
 }
