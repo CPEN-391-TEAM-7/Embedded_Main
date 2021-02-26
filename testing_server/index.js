@@ -1,4 +1,5 @@
 const dgram = require('dgram');
+const { exit } = require('process');
 const client = dgram.createSocket('udp4');
 
 domains = [
@@ -20,21 +21,20 @@ domains = [
 ]
 
 
-client.bind(56789);
+client.bind(8082);
 
 var size = domains.length
 
 setInterval( () => {
     var random = domains[Math.floor(Math.random()*size)];
-    const message = Buffer.from(random);
+    const message = Buffer.from(random+"\n");
     client.send(message, 41234, '192.168.1.123');
-    console.log("sending...");
-}, 1000);
+    console.log("sending:  " + random);
+}, 10);
 
 
 client.on("message",(msg, remote) => {
 
     console.log("recieved: " + msg);
-
 } );
 
