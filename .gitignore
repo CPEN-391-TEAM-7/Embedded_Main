@@ -1,8 +1,8 @@
 wifi_password.h
 *.o
 *axf*
-Wifi_Main.srec
+*.srec
 makefile
 wifi_test.amp
-wifi_test.srec
+
 

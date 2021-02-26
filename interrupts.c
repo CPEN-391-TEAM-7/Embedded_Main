@@ -16,13 +16,6 @@
 #define BLUETOOTH_IRQ4 76
 #define WIFI_IRQ3      75
 
-extern char buffer[1000];
-extern int buffer_ptr;
-extern int line_reached;
-
-int data_count = 0;
-int line_count = 0;
-
 void __attribute__ ((interrupt)) __cs3_isr_irq (void) {
 
     int interrupt_id = *(ICCIAR);
