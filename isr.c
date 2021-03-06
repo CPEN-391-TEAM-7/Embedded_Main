@@ -43,6 +43,12 @@ void wifi_read_ready_ISR(void) {
 
         char data = *(wifi_uart);
 
+        if(!enable_rnn) {
+            local_buffer[0] = 0;
+            *(wifi_uart + 2 ) = 0;
+            return;
+        }
+
         if(data == '>') send_now = 1;         // send signal that ESP8266 is ready to receive outbound data
         
         if( data != '\n' && data != '\r') strncat(local_buffer,&data,1);    // buffer data if all conditions met

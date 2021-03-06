@@ -53,7 +53,7 @@ void send_result(int result, long len, char * domain) {
     
     char cmd[100];								// allocate space for AT command
     //sprintf(cmd,"AT+CIPSENDEX=%lu,\"34.216.108.218\",8082\r\n",len+1);		// create AT command (ACTUAL BACKEND)
-	sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.78\",8082\r\n",len);		// create AT command
+	sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.80\",8082\r\n",len);		// create AT command
     char data[100];								// allocate space for data to be sent
     sprintf(data,"%s%d",domain,result);			// create sending data
 	send_command(WIFI, cmd);
