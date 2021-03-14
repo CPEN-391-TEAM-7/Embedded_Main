@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "parameters.h"
+#include "registers.h"
 
 extern int Embed[39][4];
 extern int Weight_Matrix[4][32];
@@ -11,12 +12,23 @@ extern int Dense_Bias;
 extern int char_list[256];
 
 
+// load all params into memory
+void initialize_rnn_params(){
+    init_char_list();
+    init_embed();
+    init_weight_matrix();
+    init_recurrent_matrix();
+    init_rnn_bias();
+    init_dense(); 
+}
+
 int test_rnn_input(char * test)
 {
-    init_char_list();
     
     int input_sequence[32];
-    int padding = 32 - ((int) strlen(test));
+    int len = ((int) strlen(test));
+    if (len > 32) return 1;
+    int padding = 32 - len;
     
     int i = 0;
     

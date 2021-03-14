@@ -6,6 +6,7 @@
 #include "registers.h"
 #include "uart.h"
 #include "interrupts.h"
+#include "rnn.h"
 
 #define IPD_PREFIX_SIZE 5
 
@@ -114,7 +115,11 @@ void test_rnn() {
 
 int main() {
 
+	initialize_rnn_params();
 	test_rnn();
+	test_rnn_input("ubc.ca");
+
+	return 0;
 
 	disable_uart_read_irq(WIFI);	  // turn off wifi receiving interrupt
 	disable_uart_read_irq(BLUETOOTH); // turn off bluetooth receiving interrupt
