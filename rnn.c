@@ -1,12 +1,21 @@
 #include <stdio.h>
 #include <string.h>
 
+extern int Embed[39][4];
+extern int Weight_Matrix[4][32];
+extern int Recurrent_Matrix[32][32];
+extern int Bias[32];
+extern int Dense[32];
+extern int Dense_Bias;
+
 int char_list[256];
 
 void init_char_list(){
     
-    for(int i =0; i< 256; i++) {
+    int i = 0;
+    while( i< 256) {
         char_list[i] = -1;
+        i++;
     }
     
 char_list[ (int) ' '] = 0;
@@ -51,7 +60,7 @@ char_list[ (int) '-'] = 38;
  
 }
 
-int main()
+int test_rnn_input()
 {
     
     init_char_list();
@@ -69,13 +78,14 @@ int main()
     }
     
     while (i<32) {
-        int v = (int) test[i-padding];
         input_sequence[i] = char_list[ (int) test[i-padding] ];
         i++;
     }
     
-    for (int x =0; x<32;x++) {
+    int x = 0;
+     while(x<32) {
         printf("%d ",input_sequence[x]);
+        x++;
     }
 
     return 0;

@@ -8,7 +8,7 @@
 // Arm core private timer
 #define timer      (volatile int *) 0xFFFEC600
 
-// Recurrent Neural Network address
+// Recurrent Neural Network accelerator address
 #define rnn        (volatile int *) 0xFF200120
 
 // bluetooth module connected to UART controller

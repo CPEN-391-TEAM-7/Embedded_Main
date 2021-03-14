@@ -61,7 +61,7 @@ void send_result(int result, long len, char * domain) {
 	while(!send_now);
 	send_command(WIFI, data);
 	send_now = 0;
-	sleep(25);
+	sleep(25);									// ESP8266 hard requirement of 20+-5 ms wait time before transmitting data
 }
 
 void update_counters(long result) {
