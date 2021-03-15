@@ -117,7 +117,18 @@ int main() {
 
 	initialize_rnn_params();
 	test_rnn();
+	load_params_into_FPGA();
 	test_rnn_input("ubc.ca");
+	rnn_apply_dense();
+
+	while(!*(rnn))
+		;
+	
+	int binary_output = *(rnn + 4);
+	int actual_output = *(rnn + result_read);
+
+	printf("BINARY: %d\n",binary_output);
+	printf("ACTUAL: %d\n",actual_output);
 
 	return 0;
 
