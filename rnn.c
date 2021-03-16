@@ -43,7 +43,8 @@ void load_rnn_bias_vector_FPGA() {
     while(i < 32) {
         while(!rnn_can_load())
             ;
-        *(rnn + rb_write) = (i << 16) + Bias[i];
+        int val =  (i << 16) + Bias[i];
+        *(rnn + rb_write) = val;
         i++;
     }
 }
@@ -52,18 +53,26 @@ void load_dense_weight_matrix_FPGA() {
     while(i < 32) {
         while(!rnn_can_load())
             ;
-        *(rnn + d_write) = Dense[i];
+        *(rnn + d_write) = (i << 16) + Dense[i];
         i++;
     }
 }
 void load_dense_bias_FPGA() {
-
+    while(!rnn_can_load())
+        ;
     *(rnn + db_write) = Dense_Bias;
 }
 
 void rnn_apply_dense() {
-
+    while(!rnn_can_load())
+        ;
     *(rnn + rnn_finish) = 1;
+}
+
+void rnn_start_sequence() {
+    while(!rnn_can_load())
+        ;
+    *rnn = 1;
 }
 
 // load all params into memory
@@ -83,6 +92,23 @@ void load_params_into_FPGA(){
     load_rnn_bias_vector_FPGA();
     load_dense_weight_matrix_FPGA();
     load_dense_bias_FPGA();
+}
+
+void load_input_into_FPGA(int emb) {
+
+    int i = 0;
+    while(i < 4){
+
+        while(!rnn_can_load())
+            ;
+
+        int val =  (i << 16) + Embed[emb][i];
+
+        printf("%d\n",val);
+
+        *(rnn + i_write) = val;
+        i++;
+    }
 }
 
 int test_rnn_input(char * test)

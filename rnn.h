@@ -18,8 +18,10 @@ void load_dense_bias_FPGA(void);
 
 void load_params_into_FPGA(void);
 
-void rnn_apply_dense(void);
+void load_input_into_FPGA(int emb);
 
+void rnn_apply_dense(void);
+void rnn_start_sequence(void);
 
 // RNN write offsets
 #define rnn_start 0

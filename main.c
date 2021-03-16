@@ -119,6 +119,11 @@ int main() {
 	test_rnn();
 	load_params_into_FPGA();
 	test_rnn_input("ubc.ca");
+
+	load_input_into_FPGA(0);
+	rnn_start_sequence();
+	load_input_into_FPGA(1);
+	rnn_start_sequence();
 	rnn_apply_dense();
 
 	while(!*(rnn))
