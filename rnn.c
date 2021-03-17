@@ -103,20 +103,18 @@ void load_input_into_FPGA(int emb) {
             ;
 
         int val =  (i << 16) + Embed[emb][i];
-
-        printf("%d\n",val);
-
         *(rnn + i_write) = val;
         i++;
     }
 }
 
-int test_rnn_input(char * test)
+
+int rnn_inference(char * domain)
 {
     
     int input_sequence[32];
-    int len = ((int) strlen(test));
-    if (len > 32) return 1;
+    int len = ((int) strlen(domain));
+    if (len > 32) return 3;
     int padding = 32 - len;
     
     int i = 0;
@@ -127,17 +125,31 @@ int test_rnn_input(char * test)
     }
     
     while (i<32) {
-        input_sequence[i] = char_list[ (int) test[i-padding] ];
+        int val = char_list[ (int) domain[i-padding]];
+
+        if(val == -1) return 4;
+
+        input_sequence[i] = char_list[ (int) domain[i-padding] ];
         i++;
     }
     
     int x = 0;
-     while(x<32) {
-        printf("%d ",input_sequence[x]);
+    while(x<32) {
+        load_input_into_FPGA(input_sequence[x]);
+        rnn_start_sequence();
         x++;
     }
 
-    printf("\n");
+    rnn_apply_dense();
 
-    return 0;
+    while(!*(rnn + valid_read))
+        ;
+
+    int binary_output = *(rnn + 4);
+    int actual_output = *(rnn + result_read);
+
+    if(actual_output > 0 && binary_output == 0) return 5;
+    if(actual_output < 0 && binary_output == 1) return 6;
+
+    return binary_output;
 }

@@ -54,7 +54,7 @@ void send_result(int result, long len, char * domain) {
     
     char cmd[100];								// allocate space for AT command
     //sprintf(cmd,"AT+CIPSENDEX=%lu,\"34.216.108.218\",8082\r\n",len+1);		// create AT command (ACTUAL BACKEND)
-	sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.80\",8082\r\n",len);		// create AT command
+	sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.78\",8082\r\n",len);		// create AT command
     char data[100];								// allocate space for data to be sent
     sprintf(data,"%s%d",domain,result);			// create sending data
 	send_command(WIFI, cmd);
@@ -94,8 +94,8 @@ void handle_wifi_buffer() {
 
 		if(strstr(raw,"IPD")) {
 			char domain[100];       			// allocate space for extracted domain
-			long len = parse_ipd(raw, domain);	// get domain and data length
-			int result = get_result(len-1);
+			long len   = parse_ipd(raw, domain);	// get domain and data length
+			int result = rnn_inference(domain);
 			send_result(result,len,domain);
 			update_counters(result);
 			raw = strtok(NULL, "\n");
@@ -106,36 +106,10 @@ void handle_wifi_buffer() {
 
 }
 
-void test_rnn() {
-	
-	printf("%x\n",*(rnn + 2));
-	printf("%x\n",*(rnn + 3));
-
-}
-
 int main() {
 
 	initialize_rnn_params();
-	test_rnn();
 	load_params_into_FPGA();
-	test_rnn_input("ubc.ca");
-
-	load_input_into_FPGA(0);
-	rnn_start_sequence();
-	load_input_into_FPGA(1);
-	rnn_start_sequence();
-	rnn_apply_dense();
-
-	while(!*(rnn))
-		;
-	
-	int binary_output = *(rnn + 4);
-	int actual_output = *(rnn + result_read);
-
-	printf("BINARY: %d\n",binary_output);
-	printf("ACTUAL: %d\n",actual_output);
-
-	return 0;
 
 	disable_uart_read_irq(WIFI);	  // turn off wifi receiving interrupt
 	disable_uart_read_irq(BLUETOOTH); // turn off bluetooth receiving interrupt

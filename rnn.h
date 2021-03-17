@@ -7,7 +7,7 @@ extern int Dense_Bias;
 extern int char_list[256];
 
 void initialize_rnn_params(void);
-int test_rnn_input(char * test);
+int rnn_inference(char * test);
 
 
 void load_rnn_weight_matrix_FPGA(void);
