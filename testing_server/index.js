@@ -30,7 +30,7 @@ setInterval( () => {
     const message = Buffer.from(random+"\n");
     client.send(message, 41234, '192.168.1.123');
     console.log("sending:  " + random);
-}, 10);
+}, 60);
 
 
 client.on("message",(msg, remote) => {
