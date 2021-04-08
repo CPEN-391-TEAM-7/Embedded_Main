@@ -6,6 +6,7 @@
 #include "registers.h"
 #include "uart.h"
 #include "interrupts.h"
+#include "rnn.h"
 
 #define IPD_PREFIX_SIZE 5
 
@@ -61,7 +62,7 @@ void send_result(int result, long len, char * domain) {
 	while(!send_now);
 	send_command(WIFI, data);
 	send_now = 0;
-	sleep(25);
+	sleep(25);									// ESP8266 hard requirement of 20+-5 ms wait time before transmitting data
 }
 
 void update_counters(long result) {
@@ -93,8 +94,8 @@ void handle_wifi_buffer() {
 
 		if(strstr(raw,"IPD")) {
 			char domain[100];       			// allocate space for extracted domain
-			long len = parse_ipd(raw, domain);	// get domain and data length
-			int result = get_result(len-1);
+			long len   = parse_ipd(raw, domain);	// get domain and data length
+			int result = rnn_inference(domain);
 			send_result(result,len,domain);
 			update_counters(result);
 			raw = strtok(NULL, "\n");
@@ -106,6 +107,9 @@ void handle_wifi_buffer() {
 }
 
 int main() {
+
+	initialize_rnn_params();
+	load_params_into_FPGA();
 
 	disable_uart_read_irq(WIFI);	  // turn off wifi receiving interrupt
 	disable_uart_read_irq(BLUETOOTH); // turn off bluetooth receiving interrupt
