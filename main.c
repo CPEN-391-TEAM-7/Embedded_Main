@@ -35,11 +35,14 @@ volatile int handle_enable = 1;
 
 /* ******************************************************************************** */
 
-
-int get_result(long len) { // temporarily all domains with odd number of characters are malware
-    return (len % 2);
-}
-
+/**
+ * Convert raw data from ESP8266 into a domain and get the length.
+ * domain string is written to given pointer
+ * 
+ * @param char * msg    - raw IPD message from ESP8266
+ * @param char * domain - buffer for domain
+ * @return ret          - length of domain
+ */
 long parse_ipd( char * msg, char * domain) {
 
     msg = msg + IPD_PREFIX_SIZE;                      // Remove string prefix '+IPD' which is 5 characters
@@ -50,11 +53,17 @@ long parse_ipd( char * msg, char * domain) {
     return ret;
 }
 
+/**
+ * Send domain result from RNN to backend server
+ * @param int result 	- RNN inference result
+ * @param long len   	- domain length
+ * @param char * domain - buffer holding domain
+ */
 void send_result(int result, long len, char * domain) {
     
     char cmd[100];								// allocate space for AT command
-    //sprintf(cmd,"AT+CIPSENDEX=%lu,\"34.216.108.218\",8082\r\n",len+1);		// create AT command (ACTUAL BACKEND)
-	sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.78\",8082\r\n",len);		// create AT command
+    sprintf(cmd,"AT+CIPSENDEX=%lu,\"54.70.155.180\",8082\r\n",len+1);		// create AT command (ACTUAL BACKEND)
+	//sprintf(cmd,"AT+CIPSENDEX=%lu,\"192.168.1.78\",8082\r\n",len);		// create AT command
     char data[100];								// allocate space for data to be sent
     sprintf(data,"%s%d",domain,result);			// create sending data
 	send_command(WIFI, cmd);
@@ -65,6 +74,10 @@ void send_result(int result, long len, char * domain) {
 	sleep(25);									// ESP8266 hard requirement of 20+-5 ms wait time before transmitting data
 }
 
+/**
+ * Update hex counters on DE1
+ * @param long result 	- RNN inference result
+ */
 void update_counters(long result) {
 
 	if(result) {
@@ -77,6 +90,10 @@ void update_counters(long result) {
 
 }
 
+/**
+ * start process of handling data inside wifi buffer
+ * ran automatically after an interrupt signifies that domain is received
+ */
 void handle_wifi_buffer() {
 
 	char buff_copy[1000];               // make same size as receiving buffer, just in case

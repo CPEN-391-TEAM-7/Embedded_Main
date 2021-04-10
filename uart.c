@@ -13,8 +13,11 @@
         "DIVISOR: *(wifi_uart+4));
 */
 
-// enable interrupts for either module
-// write 1 to bit 7 of the control register
+/**
+ * Enable IRQ at UART controller level
+ * @param int module - which module to read from
+ *		WIFI = 1, Bluetooth = 0
+ */
 void enable_uart_read_irq(int module) {
     
     if(module == WIFI) {
@@ -26,8 +29,11 @@ void enable_uart_read_irq(int module) {
     }
 }
 
-// disable interrupts for either module
-// write 0 to bit 7 of the control register
+/**
+ * Disable IRQ at UART controller level
+ * @param int module - which module to read from
+ *		WIFI = 1, Bluetooth = 0
+ */
 void disable_uart_read_irq(int module) {
     
     if(module == WIFI) *(wifi_uart + 3) = 0;
@@ -35,13 +41,23 @@ void disable_uart_read_irq(int module) {
     
 }
 
-// check if transmit ready bit is high in UART controller
+/**
+ * Check the transmit status of the UART controller
+ * @param int module - which module to read from
+ *		WIFI = 1, Bluetooth = 0
+ * @return 1 if module can transmit, 0 otherwise
+ */
 int can_transmit(int module) {
 	if (module == WIFI) return *(wifi_uart+2) & 1 << 6;
 	else                return *(  bt_uart+2) & 1 << 6;
 }
 
-// sends chars to UART controller as long as it can transmit
+/**
+ * sends chars to UART controller as long as it can transmit
+ * @param char * cmd - command to send
+ * @param int module - which module to read from
+ *		WIFI = 1, Bluetooth = 0
+ */
 void send_command(int module, char * cmd) {
 	char * i = cmd;
     while( *i != '\0') {
@@ -52,15 +68,25 @@ void send_command(int module, char * cmd) {
     }
 }
 
-// check if receive status bit is 1 in UART controller
+/**
+ * check if receive status bit is 1 in UART controller
+ * @param int module - which module to read from
+ *		WIFI = 1, Bluetooth = 0
+ * @return 1 if module can receive, 0 otherwise
+ */
 int can_receive(int module) {
 	if (module == WIFI) return *(wifi_uart+2) & 1 << 7;
 	else                return *(  bt_uart+2) & 1 << 7;
 }
 
 
-// receive uart data by using polling instead of interrupts.
-// useful during setup phase before interrupts
+/**
+ * receive data using busy waiting instead of interupts
+ * @param char * buffer - which pointer to save data to
+ * @param int print     - enable printf output of data
+ * @param int module    - which module to read from
+ *		WIFI = 1, Bluetooth = 0
+ */
 void receive_single_data( int module ,char * buffer, int print) {
 
 	int counter = 0;
@@ -82,6 +108,9 @@ void receive_single_data( int module ,char * buffer, int print) {
 	buffer[0] = 0;
 }
 
+/**
+ * Special routine used to reset wifi through hardware
+ */
 void reset_wifi(){
 
 	// reset value should start at 0
@@ -94,11 +123,16 @@ void reset_wifi(){
 	*(wifi_uart+2) = 0;
 }
 
+/**
+ * Clear bluetooth UART status register
+ */
 void reset_bluetooth(){
 	*(bt_uart+2) = 0;
 }
 
-// check all status register bits in UART core
+/**
+ * Check all status bits in the UART controller
+ */
 void check_status(int module) {
 
 	int status;

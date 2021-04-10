@@ -1,13 +1,20 @@
 int char_list[256];
 
+/**
+ * Initialize the char encoding list
+ * used to select from embedding matrix
+ */
 void init_char_list(){
     
+    // set unused ascii letters to -1
+    // used to detect invalid characters
     int i = 0;
     while( i< 256) {
         char_list[i] = -1;
         i++;
     }
-    
+
+// create a simple hashmap out of each char by using its ascii code as a key    
 char_list[ (int) ' '] = 0;
 char_list[ (int) 'a'] = 1;
 char_list[ (int) 'b'] = 2;

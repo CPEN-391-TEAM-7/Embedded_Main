@@ -16,6 +16,9 @@
 #define BLUETOOTH_IRQ4 76
 #define WIFI_IRQ3      75
 
+/**
+ * Set interrupt IDs corresponding to hardware IRQ numbers
+ */
 void __attribute__ ((interrupt)) __cs3_isr_irq (void) {
 
     int interrupt_id = *(ICCIAR);
@@ -55,11 +58,18 @@ void __attribute__ ((interrupt)) __cs3_isr_fiq (void) {
     while(1);
 }
 
+/**
+ * Disable all interrupts at the CPU level
+ */
 void disable_A9_interrupts(void) {
     int status = 0b11010011;
     asm("msr cpsr, %[ps]" : : [ps] "r"(status));
 }
 
+/**
+ * Set IRQ stack for enabling interrupts
+ * modifies status register
+ */
 void set_A9_IRQ_stack(void) {
     int stack, mode;
     stack = 0xFFFFFFFF - 7;
@@ -70,11 +80,17 @@ void set_A9_IRQ_stack(void) {
     asm("msr cpsr, %[ps]" : : [ps] "r"(mode));
 }
 
+/**
+ * Enable all interrupts at the CPU level
+ */
 void enable_A9_interrupts(void) {
     int status = 0b01010011;
     asm("msr cpsr, %[ps]" : : [ps] "r"(status));
 }
 
+/**
+ * Enable handling for Wifi and BT ISRs
+ */
 void config_GIC(void) {
     // configure the interrupt for IRQ level 4
     // which is the Bluetooth module on CPU 1
@@ -86,6 +102,10 @@ void config_GIC(void) {
     *(ICDDCR) = 1;      // Configure the Distributor Control Register to send pending interrupts to CPUs
 }
 
+
+/**
+ * Used to set CPU registers corresponding to different ISRs
+ */
 void config_interrupt(int N,int CPU_target) {
     int reg_offset, index, value, address;
 
@@ -109,7 +129,10 @@ void config_interrupt(int N,int CPU_target) {
 }
 
 
-// wait for number of ms, uses hardware timer
+/**
+ * Sleep function using arm private timer
+ * @param int millis - number of milliseconds to wait
+ */
 void sleep(int millis) {
 
 	int ticks    = millis*200000; // 200E6 ticks is one second

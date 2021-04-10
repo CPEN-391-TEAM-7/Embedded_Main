@@ -16,6 +16,12 @@ extern int  wifi_lines;
 extern int  send_now;
 extern int  handle_enable;
 
+
+/**
+ * run when bluetooth data is received
+ * turn on all LEDs as warning
+ * disable/enable DE1 protection
+ */
 void bt_read_ready_ISR(void) {
 
     while (can_receive(BLUETOOTH)) { 
@@ -35,8 +41,14 @@ void bt_read_ready_ISR(void) {
     *(bt_uart + 2 ) = 0;
 }
 
+// used to store partial message before sending to domain handler
 char local_buffer[1000];
 
+
+/**
+ * Used to receive data from wifi
+ * notify domain handler when a newline is received
+ */
 void wifi_read_ready_ISR(void) {
 
     while (can_receive(WIFI)) {
